@@ -35,3 +35,4 @@
 /Users/oshiomogwemeh/Documents/test-app/bin/Debug/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
 /Users/oshiomogwemeh/Documents/test-app/bin/Debug/net8.0/Microsoft.Extensions.Logging.Abstractions.dll
 /Users/oshiomogwemeh/Documents/test-app/bin/Debug/net8.0/Microsoft.Extensions.Options.dll
+/Users/oshiomogwemeh/Documents/test-app/obj/Debug/net8.0/test-app.sourcelink.json

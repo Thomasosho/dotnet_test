@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using VendorBiddingApp.Models;
-using VendorBiddingApp.Data;
+using VendorBiddingApp.Services;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using System.Linq;
 
 namespace VendorBiddingApp.Controllers
 {
@@ -12,45 +13,44 @@ namespace VendorBiddingApp.Controllers
     [Authorize]
     public class ProjectsController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ProjectService _projectService;
 
-        public ProjectsController(ApplicationDbContext context)
+        public ProjectsController(ProjectService projectService)
         {
-            _context = context;
+            _projectService = projectService;
         }
 
         [HttpGet]
-        public IActionResult GetProjects()
+        public async Task<IActionResult> GetProjects()
         {
-            var projects = _context.Projects
-                .Select(p => new 
-                { 
-                    p.Id, 
-                    p.Title, 
-                    p.Description 
-                })
-                .ToList();
-            return Ok(projects);
+            var projects = await _projectService.GetProjectsAsync();
+            var projectDtos = projects.Select(p => new
+            {
+                p.Id,
+                p.Title,
+                p.Description
+            }).ToList();
+
+            return Ok(projectDtos);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetProject(Guid id)
+        public async Task<IActionResult> GetProject(Guid id)
         {
-            var project = _context.Projects
-                .Where(p => p.Id == id)
-                .Select(p => new 
-                { 
-                    p.Id, 
-                    p.Title, 
-                    p.Description 
-                })
-                .FirstOrDefault();
-
+            var project = await _projectService.GetProjectByIdAsync(id);
             if (project == null)
             {
                 return NotFound();
             }
-            return Ok(project);
+
+            var projectDto = new
+            {
+                project.Id,
+                project.Title,
+                project.Description
+            };
+
+            return Ok(projectDto);
         }
 
         [HttpPost]
@@ -68,8 +68,7 @@ namespace VendorBiddingApp.Controllers
                 Description = projectDto.Description
             };
 
-            _context.Projects.Add(project);
-            await _context.SaveChangesAsync();
+            await _projectService.CreateProjectAsync(project);
 
             var response = new
             {

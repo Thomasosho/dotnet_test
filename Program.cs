@@ -35,6 +35,10 @@ builder.Services.AddSingleton<TokenService>(provider =>
     return new TokenService(secretKey);
 });
 
+builder.Services.AddScoped<VendorService>();
+builder.Services.AddScoped<VendorBiddingService>();
+builder.Services.AddScoped<ProjectService>();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

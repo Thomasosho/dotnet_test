@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using VendorBiddingApp.Models;
-using VendorBiddingApp.Data;
+using VendorBiddingApp.Services;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
-using System;
 using Microsoft.AspNetCore.Authorization;
 
 namespace VendorBiddingApp.Controllers
@@ -13,49 +13,48 @@ namespace VendorBiddingApp.Controllers
     [Authorize]
     public class BidsController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly VendorBiddingService _vendorBiddingService;
 
-        public BidsController(ApplicationDbContext context)
+        public BidsController(VendorBiddingService vendorBiddingService)
         {
-            _context = context;
+            _vendorBiddingService = vendorBiddingService;
         }
 
         [HttpGet]
-        public IActionResult GetBids()
+        public async Task<IActionResult> GetBids()
         {
-            var bids = _context.Bids
-                .Select(b => new
-                {
-                    b.Id,
-                    b.VendorId,
-                    b.ProjectId,
-                    b.Amount,
-                    b.Status
-                })
-                .ToList();
-            return Ok(bids);
+            var bids = await _vendorBiddingService.GetBidsAsync();
+            var bidDtos = bids.Select(b => new
+            {
+                b.Id,
+                b.VendorId,
+                b.ProjectId,
+                b.Amount,
+                b.Status
+            }).ToList();
+
+            return Ok(bidDtos);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetBid(Guid id)
+        public async Task<IActionResult> GetBid(Guid id)
         {
-            var bid = _context.Bids
-                .Where(b => b.Id == id)
-                .Select(b => new
-                {
-                    b.Id,
-                    b.VendorId,
-                    b.ProjectId,
-                    b.Amount,
-                    b.Status
-                })
-                .FirstOrDefault();
-
+            var bid = await _vendorBiddingService.GetBidByIdAsync(id);
             if (bid == null)
             {
                 return NotFound();
             }
-            return Ok(bid);
+
+            var bidDto = new
+            {
+                bid.Id,
+                bid.VendorId,
+                bid.ProjectId,
+                bid.Amount,
+                bid.Status
+            };
+
+            return Ok(bidDto);
         }
 
         [HttpPost]
@@ -64,6 +63,11 @@ namespace VendorBiddingApp.Controllers
             if (bidDto == null)
             {
                 return BadRequest("Bid data is null.");
+            }
+
+            if (string.IsNullOrEmpty(bidDto.VendorId))
+            {
+                return BadRequest("VendorId is required.");
             }
 
             var bid = new Bid
@@ -75,8 +79,7 @@ namespace VendorBiddingApp.Controllers
                 Status = bidDto.Status
             };
 
-            _context.Bids.Add(bid);
-            await _context.SaveChangesAsync();
+            await _vendorBiddingService.CreateBidAsync(bid);
 
             var response = new
             {
@@ -88,20 +91,19 @@ namespace VendorBiddingApp.Controllers
         }
 
         [HttpGet("vendor/{vendorId}")]
-        public IActionResult GetBidsByVendor(int vendorId)
+        public async Task<IActionResult> GetBidsByVendor(string vendorId)
         {
-            var bids = _context.Bids
-                .Where(b => b.VendorId == vendorId)
-                .Select(b => new
-                {
-                    b.Id,
-                    b.VendorId,
-                    b.ProjectId,
-                    b.Amount,
-                    b.Status
-                })
-                .ToList();
-            return Ok(bids);
+            var bids = await _vendorBiddingService.GetBidsByVendorAsync(vendorId);
+            var bidDtos = bids.Select(b => new
+            {
+                b.Id,
+                b.VendorId,
+                b.ProjectId,
+                b.Amount,
+                b.Status
+            }).ToList();
+
+            return Ok(bidDtos);
         }
     }
 }
